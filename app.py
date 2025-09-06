@@ -24,15 +24,29 @@ def get_db_connection():
 # ===================================================================
 #      PUBLIC ROUTES (No changes needed here)
 # ===================================================================
+# In your app.py file
+
 @app.route('/')
 def home():
+    """Renders the main timetable viewer page and provides batches grouped by department."""
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT batch_id, batch_name FROM batches ORDER BY batch_id;")
-    batches = cur.fetchall()
+    # Use DictCursor to get column names
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    # Fetch department along with other details
+    cur.execute("SELECT batch_id, batch_name, department FROM batches ORDER BY department, batch_name;")
+    
+    # Group batches by department
+    batches_by_dept = {}
+    for batch in cur.fetchall():
+        dept = batch['department']
+        if dept not in batches_by_dept:
+            batches_by_dept[dept] = []
+        batches_by_dept[dept].append(batch)
+        
     cur.close()
     conn.close()
-    return render_template('index.html', batches=batches)
+    # Send the correct variable name to the template
+    return render_template('index.html', batches_by_dept=batches_by_dept)
 
 
 @app.route('/get_timetable', methods=['POST'])
