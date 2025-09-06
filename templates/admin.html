@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
     <style>
-        :root { --primary-color: #007bff; --success-color: #28a745; --light-gray: #f8f9fa; --dark-gray: #343a40; }
+        :root { --primary-color: #007bff; --success-color: #28a745; --danger-color: #dc3545; --warning-color: #ffc107; --light-gray: #f8f9fa; --dark-gray: #343a40; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--light-gray); margin: 0; color: var(--dark-gray); }
         .sidebar { width: 250px; background: var(--dark-gray); color: white; position: fixed; height: 100%; padding-top: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
         .sidebar h2 { text-align: center; }
@@ -12,20 +12,30 @@
         .sidebar a:hover, .sidebar a.active { background-color: #495057; color: white; border-left: 3px solid var(--primary-color); }
         .main-content { margin-left: 250px; padding: 2rem; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-        .logout-btn { background: #dc3545; color: white; padding: 0.5rem 1rem; border-radius: 5px; text-decoration: none; }
+        .logout-btn { background: var(--danger-color); color: white; padding: 0.5rem 1rem; border-radius: 5px; text-decoration: none; }
         .content-section { display: none; }
         .content-section.active { display: block; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 2rem; }
-        button { background-color: var(--primary-color); color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; transition: background-color 0.3s; }
-        button[type="submit"] { background-color: var(--success-color); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        button, .button { background-color: var(--primary-color); color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; text-decoration: none; display: inline-block; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        button.add-btn { background-color: var(--success-color); }
+        button.edit-btn { background-color: var(--warning-color); font-size: 0.8rem; padding: 0.4rem 0.8rem; }
+        button.delete-btn { background-color: var(--danger-color); font-size: 0.8rem; padding: 0.4rem 0.8rem; }
         table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
-        th, td { border: 1px solid #dee2e6; padding: 0.75rem; text-align: left; }
+        th, td { border: 1px solid #dee2e6; padding: 0.75rem; text-align: left; vertical-align: middle; }
         th { background-color: #e9ecef; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { margin-bottom: 0.5rem; font-weight: 600; }
-        .form-group input, .form-group select { width: 100%; box-sizing: border-box; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; }
+        .timetable-slot { cursor: pointer; transition: background-color 0.2s; text-align: center; }
+        .timetable-slot:hover { background-color: #e9ecef; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fefefe; padding: 20px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 8px; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: .5rem; font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; box-sizing: border-box; padding: .75rem; border: 1px solid #ced4da; border-radius: 4px; }
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 1rem; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -33,6 +43,7 @@
     <div class="sidebar">
         <h2>Admin Panel</h2>
         <a class="nav-link active" data-target="dashboard">Dashboard</a>
+        <a class="nav-link" data-target="manage-timetables">Manage Timetables</a>
         <a class="nav-link" data-target="teachers">Manage Teachers</a>
         <a class="nav-link" data-target="subjects">Manage Subjects</a>
         <a class="nav-link" data-target="batches">Manage Batches</a>
@@ -45,153 +56,598 @@
         </header>
 
         <div id="dashboard" class="content-section card active">
-            <h2>Scheduler Control</h2>
-            <p>Click the button to generate a new timetable. This will overwrite the existing schedule.</p>
-            <button id="runSchedulerBtn">Generate New Timetable</button>
+            <h2>Global Scheduler Control</h2>
+            <p>Generate a new timetable for ALL batches. This will overwrite everything.</p>
+            <button id="runSchedulerBtn">Generate Global Timetable</button>
             <div id="scheduler-status" style="margin-top: 1rem; font-weight: bold;"></div>
+        </div>
+        
+        <div id="manage-timetables" class="content-section card">
+            <h2>Manage Timetables</h2>
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div class="form-group" style="flex-grow: 1;">
+                    <label for="adminBatchSelect">Select a Batch to View/Edit its Timetable</label>
+                    <select id="adminBatchSelect"></select>
+                </div>
+                <div class="form-group" style="margin-top: auto;">
+                    <button id="optimizeBatchBtn" disabled>Optimize Timetable for this Batch</button>
+                </div>
+            </div>
+             <div id="batch-scheduler-status" style="margin-top: 1rem; font-weight: bold;"></div>
+            <table id="admin-timetable">
+                <thead id="admin-timetable-head"></thead>
+                <tbody id="admin-timetable-body"></tbody>
+            </table>
         </div>
 
         <div id="teachers" class="content-section card">
-            <h2>Manage Teachers</h2>
-            <div class="card" style="margin-bottom: 2rem; background-color: #f8f9fa;">
-                <h3>Add New Teacher</h3>
-                <form id="addTeacherForm">
-                    <div class="form-grid">
-                        <div class="form-group"><label for="teacherName">Name</label><input type="text" name="name" required></div>
-                        <div class="form-group">
-                            <label for="teacherSpecDropdown">Specialization</label>
-                            <select name="specialization" id="teacherSpecDropdown" required>
-                                <option value="">-- Loading Subjects --</option>
-                            </select>
-                        </div>
-                        <div class="form-group"><label for="teacherEmail">Email</label><input type="email" name="email" required></div>
-                        <div class="form-group"><label for="teacherMax">Max Classes/Week</label><input type="number" name="max_classes" required></div>
-                    </div>
-                    <button type="submit">Add Teacher</button>
-                </form>
+            <div class="card-header">
+                <h2>Manage Teachers</h2>
+                <button class="add-btn" id="addTeacherBtn">Add New Teacher</button>
             </div>
-            <h3>Existing Teachers</h3>
-            <table><thead><tr><th>ID</th><th>Name</th><th>Specialization</th><th>Email</th><th>Max Classes/Week</th></tr></thead><tbody id="teachers-table"></tbody></table>
-        </div>
-
-        <div id="subjects" class="content-section card">
-            <h2>Manage Subjects</h2>
-            <div class="card" style="margin-bottom: 2rem; background-color: #f8f9fa;">
-                <h3>Add New Subject</h3>
-                <form id="addSubjectForm">
-                     <div class="form-grid">
-                        <div class="form-group"><label>Subject Name</label><input type="text" name="subject_name" required></div>
-                        <div class="form-group"><label>Short Code (e.g., 'P' for Physics)</label><input type="text" name="short_code" required></div>
-                        <div class="form-group"><label>Default Classes/Week</label><input type="number" name="classes_per_week" required></div>
-                        <div class="form-group"><label>Max Classes/Day</label><input type="number" name="max_per_day" required></div>
-                    </div>
-                    <button type="submit">Add Subject</button>
-                </form>
-            </div>
-            <h3>Existing Subjects</h3>
-            <table><thead><tr><th>ID</th><th>Name</th><th>Short Code</th><th>Classes/Week</th><th>Max/Day</th></tr></thead><tbody id="subjects-table"></tbody></table>
+            <table id="teachers-table">
+                <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Max Classes/Wk</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
         
+        <div id="subjects" class="content-section card">
+            <div class="card-header">
+                <h2>Manage Subjects</h2>
+                <button class="add-btn" id="addSubjectBtn">Add New Subject</button>
+            </div>
+            <table id="subjects-table">
+                <thead><tr><th>ID</th><th>Name</th><th>Short Code</th><th>Classes/Wk</th><th>Max/Day</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
         <div id="batches" class="content-section card">
-            <h2>Manage Batches</h2>
-            <h3>Existing Batches</h3>
-            <table><thead><tr><th>ID</th><th>Department</th><th>Level</th><th>Batch Name</th></tr></thead><tbody id="batches-table"></tbody></table>
+            <div class="card-header">
+                <h2>Manage Batches</h2>
+                <button class="add-btn" id="addBatchBtn">Add New Batch</button>
+            </div>
+            <table id="batches-table">
+                <thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Level</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div id="teacherModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="teacherModalTitle">Add New Teacher</h2>
+            <form id="teacherForm">
+                <input type="hidden" id="edit-teacher-id">
+                <div class="form-grid">
+                    <div class="form-group"><label>Name</label><input type="text" id="teacher-name" required></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="teacher-email" required></div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group"><label>Primary Specialization</label><input type="text" id="teacher-spec"></div>
+                    <div class="form-group"><label>Max Classes/Week</label><input type="number" id="teacher-max-classes" required></div>
+                </div>
+                <div class="form-group">
+                    <label>Teachable Subjects (Select all that apply)</label>
+                    <div id="teacher-subjects" class="checkbox-grid"></div>
+                </div>
+                <button type="submit">Save Changes</button>
+            </form>
         </div>
     </div>
 
+    <div id="subjectModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="subjectModalTitle">Add New Subject</h2>
+            <form id="subjectForm">
+                <input type="hidden" id="edit-subject-id">
+                <div class="form-grid">
+                    <div class="form-group"><label>Subject Name</label><input type="text" id="subject-name" required></div>
+                    <div class="form-group"><label>Short Code (e.g., CS101)</label><input type="text" id="subject-short-code" required></div>
+                </div>
+                 <div class="form-grid">
+                    <div class="form-group"><label>Default Classes/Week</label><input type="number" id="subject-classes-week" required></div>
+                    <div class="form-group"><label>Max Classes/Day</label><input type="number" id="subject-max-day" required></div>
+                </div>
+                <button type="submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+     <div id="batchModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="batchModalTitle">Add New Batch</h2>
+            <form id="batchForm">
+                <input type="hidden" id="edit-batch-id">
+                <div class="form-grid">
+                    <div class="form-group"><label>Batch Name</label><input type="text" id="batch-name" required></div>
+                    <div class="form-group"><label>Department</label><input type="text" id="batch-department" required></div>
+                </div>
+                <div class="form-group"><label>Level (e.g., UG, PG)</label><input type="text" id="batch-level" required></div>
+                <div class="form-group">
+                    <label>Subjects for this Batch (Set classes per week)</label>
+                    <div id="batch-subjects" class="checkbox-grid"></div>
+                </div>
+                <button type="submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="editSlotModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Edit Timetable Slot</h2>
+            <p id="slot-info"></p>
+            <form id="editSlotForm">
+                <input type="hidden" id="edit-slot-batch-id">
+                <input type="hidden" id="edit-slot-day">
+                <input type="hidden" id="edit-slot-period">
+                <div class="form-group">
+                    <label for="edit-slot-subject">Change Subject</label>
+                    <select id="edit-slot-subject" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-slot-teacher">Change Teacher</label>
+                    <select id="edit-slot-teacher" required></select>
+                </div>
+                <button type="submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // --- Navigation Logic ---
-            const navLinks = document.querySelectorAll('.nav-link');
-            const sections = document.querySelectorAll('.content-section');
-            navLinks.forEach(link => {
-                link.addEventListener('click', () => {
-                    navLinks.forEach(l => l.classList.remove('active'));
-                    sections.forEach(s => s.classList.remove('active'));
-                    link.classList.add('active');
-                    document.getElementById(link.dataset.target).classList.add('active');
-                });
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- GLOBAL DATA STORE ---
+        let AppData = { teachers: [], subjects: [], batches: [], teacher_subjects: [], batch_subjects: [] };
+
+        // --- NAVIGATION & MODAL HANDLING ---
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.content-section');
+        const modals = document.querySelectorAll('.modal');
+        navLinks.forEach(link => link.addEventListener('click', () => {
+            navLinks.forEach(l => l.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+            link.classList.add('active');
+            document.getElementById(link.dataset.target).classList.add('active');
+        }));
+        modals.forEach(modal => {
+            modal.querySelector('.close-btn').onclick = () => { modal.style.display = 'none'; };
+        });
+        window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; };
+
+        // --- DATA LOADING & RENDERING ---
+        function loadAdminData() {
+            fetch('/admin/data/all')
+            .then(res => res.json())
+            .then(data => {
+                AppData = data;
+                renderAllTables();
+                populateBatchSelect();
             });
+        }
+        
+        function renderAllTables() {
+            renderTeachersTable();
+            renderSubjectsTable();
+            renderBatchesTable();
+        }
 
-            // --- DATA LOADING & DYNAMIC POPULATION ---
-            function loadAdminData() {
-                fetch('/admin/data')
-                    .then(res => res.json())
-                    .then(data => {
-                        const teachersTbody = document.getElementById('teachers-table');
-                        teachersTbody.innerHTML = '';
-                        data.teachers.forEach(t => {
-                            teachersTbody.innerHTML += `<tr><td>${t.teacher_id}</td><td>${t.name}</td><td>${t.subject_specialization}</td><td>${t.email}</td><td>${t.max_classes_per_week}</td></tr>`;
-                        });
-                        
-                        const subjectsTbody = document.getElementById('subjects-table');
-                        const specializationDropdown = document.getElementById('teacherSpecDropdown');
-                        subjectsTbody.innerHTML = '';
-                        specializationDropdown.innerHTML = '<option value="">-- Select a Subject --</option>';
-                        data.subjects.forEach(s => {
-                            subjectsTbody.innerHTML += `<tr><td>${s.subject_id}</td><td>${s.subject_name}</td><td>${s.short_code}</td><td>${s.classes_per_week}</td><td>${s.max_per_day}</td></tr>`;
-                            specializationDropdown.innerHTML += `<option value="${s.subject_name}">${s.subject_name}</option>`;
-                        });
+        function renderTeachersTable() {
+            const tbody = document.querySelector('#teachers-table tbody');
+            tbody.innerHTML = '';
+            AppData.teachers.forEach(t => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${t.teacher_id}</td>
+                        <td>${t.name}</td>
+                        <td>${t.email}</td>
+                        <td>${t.max_classes_per_week}</td>
+                        <td>
+                            <button class="edit-btn" data-teacher-id="${t.teacher_id}">Edit</button>
+                            <button class="delete-btn" data-teacher-id="${t.teacher_id}">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+        }
 
-                        const batchesTbody = document.getElementById('batches-table');
-                        batchesTbody.innerHTML = '';
-                        data.batches.forEach(b => {
-                            batchesTbody.innerHTML += `<tr><td>${b.batch_id}</td><td>${b.department}</td><td>${b.level}</td><td>${b.batch_name}</td></tr>`;
-                        });
+        function renderSubjectsTable() {
+            const tbody = document.querySelector('#subjects-table tbody');
+            tbody.innerHTML = '';
+            AppData.subjects.forEach(s => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${s.subject_id}</td>
+                        <td>${s.subject_name}</td>
+                        <td>${s.short_code}</td>
+                        <td>${s.classes_per_week}</td>
+                        <td>${s.max_per_day}</td>
+                        <td>
+                            <button class="edit-btn" data-subject-id="${s.subject_id}">Edit</button>
+                            <button class="delete-btn" data-subject-id="${s.subject_id}">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+        
+        function renderBatchesTable() {
+            const tbody = document.querySelector('#batches-table tbody');
+            tbody.innerHTML = '';
+            AppData.batches.forEach(b => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${b.batch_id}</td>
+                        <td>${b.batch_name}</td>
+                        <td>${b.department}</td>
+                        <td>${b.level}</td>
+                        <td>
+                            <button class="edit-btn" data-batch-id="${b.batch_id}">Edit</button>
+                            <button class="delete-btn" data-batch-id="${b.batch_id}">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function populateBatchSelect() {
+            const select = document.getElementById('adminBatchSelect');
+            select.innerHTML = '<option value="">-- Select Batch --</option>';
+            AppData.batches.forEach(b => {
+                select.innerHTML += `<option value="${b.batch_id}">${b.batch_name}</option>`;
+            });
+        }
+        
+        loadAdminData();
+
+        // --- EVENT LISTENERS (Buttons & Forms) ---
+        
+        document.getElementById('addTeacherBtn').addEventListener('click', () => openTeacherModal());
+        document.getElementById('addSubjectBtn').addEventListener('click', () => openSubjectModal());
+        document.getElementById('addBatchBtn').addEventListener('click', () => openBatchModal());
+
+        document.querySelector('#teachers-table').addEventListener('click', handleTableActionEvent);
+        document.querySelector('#subjects-table').addEventListener('click', handleTableActionEvent);
+        document.querySelector('#batches-table').addEventListener('click', handleTableActionEvent);
+
+        function handleTableActionEvent(e) {
+            const target = e.target;
+            const id = target.dataset.teacherId || target.dataset.subjectId || target.dataset.batchId;
+            if (!id) return;
+
+            const entity = target.dataset.teacherId ? 'teacher' : (target.dataset.subjectId ? 'subject' : 'batch');
+
+            if (target.classList.contains('edit-btn')) {
+                if (entity === 'teacher') openTeacherModal(id);
+                if (entity === 'subject') openSubjectModal(id);
+                if (entity === 'batch') openBatchModal(id);
+            } else if (target.classList.contains('delete-btn')) {
+                if (confirm(`Are you sure you want to delete this ${entity}? This cannot be undone.`)) {
+                    fetch(`/admin/${entity}/delete/${id}`, { method: 'POST' })
+                    .then(res => res.json()).then(data => {
+                        alert(data.message);
+                        if (data.success) loadAdminData();
                     });
+                }
             }
-            loadAdminData();
+        }
+        
+        // --- MODAL OPEN/CLOSE & POPULATE FUNCTIONS ---
 
-            // --- FORM SUBMISSION LOGIC ---
-            document.getElementById('addTeacherForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                fetch('/admin/add-teacher', { method: 'POST', body: new URLSearchParams(formData) })
-                .then(res => res.json())
-                .then(data => {
-                    alert(data.message);
-                    if (data.success) {
-                        e.target.reset();
-                        loadAdminData();
-                    }
-                });
+        function openTeacherModal(id = null) {
+            const modal = document.getElementById('teacherModal');
+            const form = document.getElementById('teacherForm');
+            form.reset();
+            document.getElementById('teacherModalTitle').textContent = id ? 'Edit Teacher' : 'Add New Teacher';
+            document.getElementById('edit-teacher-id').value = id || '';
+
+            const subjectContainer = document.getElementById('teacher-subjects');
+            subjectContainer.innerHTML = '';
+            AppData.subjects.forEach(sub => {
+                subjectContainer.innerHTML += `<div><input type="checkbox" id="t-sub-${sub.subject_id}" value="${sub.subject_id}"><label for="t-sub-${sub.subject_id}">${sub.subject_name}</label></div>`;
             });
 
-            document.getElementById('addSubjectForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                fetch('/admin/add-subject', { method: 'POST', body: new URLSearchParams(formData) })
-                .then(res => res.json())
-                .then(data => {
-                    alert(data.message);
-                    if (data.success) {
-                        e.target.reset();
-                        loadAdminData();
+            if (id) {
+                const teacher = AppData.teachers.find(t => t.teacher_id == id);
+                document.getElementById('teacher-name').value = teacher.name;
+                document.getElementById('teacher-spec').value = teacher.subject_specialization;
+                document.getElementById('teacher-email').value = teacher.email;
+                document.getElementById('teacher-max-classes').value = teacher.max_classes_per_week;
+
+                const assignedSubjects = AppData.teacher_subjects.filter(ts => ts.teacher_id == id).map(ts => ts.subject_id);
+                assignedSubjects.forEach(subId => {
+                    const checkbox = document.getElementById(`t-sub-${subId}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            modal.style.display = 'flex';
+        }
+        
+        function openSubjectModal(id = null) {
+            const modal = document.getElementById('subjectModal');
+            const form = document.getElementById('subjectForm');
+            form.reset();
+            document.getElementById('subjectModalTitle').textContent = id ? 'Edit Subject' : 'Add New Subject';
+            document.getElementById('edit-subject-id').value = id || '';
+
+            if (id) {
+                const subject = AppData.subjects.find(s => s.subject_id == id);
+                document.getElementById('subject-name').value = subject.subject_name;
+                document.getElementById('subject-short-code').value = subject.short_code;
+                document.getElementById('subject-classes-week').value = subject.classes_per_week;
+                document.getElementById('subject-max-day').value = subject.max_per_day;
+            }
+            modal.style.display = 'flex';
+        }
+
+        function openBatchModal(id = null) {
+            const modal = document.getElementById('batchModal');
+            const form = document.getElementById('batchForm');
+            form.reset();
+            document.getElementById('batchModalTitle').textContent = id ? 'Edit Batch' : 'Add New Batch';
+            document.getElementById('edit-batch-id').value = id || '';
+
+            const subjectContainer = document.getElementById('batch-subjects');
+            subjectContainer.innerHTML = '';
+            AppData.subjects.forEach(sub => {
+                subjectContainer.innerHTML += `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="b-sub-${sub.subject_id}" value="${sub.subject_id}">
+                        <label for="b-sub-${sub.subject_id}" style="flex-grow: 1;">${sub.subject_name}</label>
+                        <input type="number" min="1" placeholder="Classes/Wk" class="classes-input" style="width: 80px;" data-subject-id="${sub.subject_id}" disabled>
+                    </div>`;
+            });
+
+            if (id) {
+                const batch = AppData.batches.find(b => b.batch_id == id);
+                document.getElementById('batch-name').value = batch.batch_name;
+                document.getElementById('batch-department').value = batch.department;
+                document.getElementById('batch-level').value = batch.level;
+
+                const assignedSubjects = AppData.batch_subjects.filter(bs => bs.batch_id == id);
+                assignedSubjects.forEach(bs => {
+                    const checkbox = document.getElementById(`b-sub-${bs.subject_id}`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        const numberInput = subjectContainer.querySelector(`.classes-input[data-subject-id="${bs.subject_id}"]`);
+                        if (numberInput) {
+                            numberInput.disabled = false;
+                            numberInput.value = bs.classes_per_week;
+                        }
                     }
                 });
-            });
-            
-            // --- SCHEDULER BUTTON ---
-            document.getElementById('runSchedulerBtn').addEventListener('click', () => {
-                if (!confirm('Are you sure you want to generate a new timetable?')) return;
-                const btn = document.getElementById('runSchedulerBtn');
-                const status = document.getElementById('scheduler-status');
-                btn.disabled = true;
-                btn.textContent = 'Generating...';
-                status.textContent = 'Running...';
-                
-                fetch('/run-scheduler', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    status.textContent = `Status: ${data.message}`;
-                    status.style.color = data.success ? 'green' : 'red';
-                })
-                .finally(() => {
-                    btn.disabled = false;
-                    btn.textContent = 'Generate New Timetable';
-                });
+            }
+            modal.style.display = 'flex';
+        }
+        
+        document.getElementById('batch-subjects').addEventListener('change', e => {
+            if (e.target.type === 'checkbox') {
+                const numberInput = e.target.parentElement.querySelector('.classes-input');
+                numberInput.disabled = !e.target.checked;
+                if(!e.target.checked) numberInput.value = '';
+            }
+        });
+
+        // --- FORM SUBMISSION LOGIC (TEACHER, SUBJECT, BATCH) ---
+        document.getElementById('teacherForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-teacher-id').value;
+            const url = id ? `/admin/teacher/update/${id}` : '/admin/teacher/add';
+            const selectedSubjects = Array.from(document.querySelectorAll('#teacher-subjects input:checked')).map(el => el.value);
+            const payload = {
+                name: document.getElementById('teacher-name').value,
+                specialization: document.getElementById('teacher-spec').value,
+                email: document.getElementById('teacher-email').value,
+                max_classes: document.getElementById('teacher-max-classes').value,
+                subjects: selectedSubjects
+            };
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            .then(res => res.json()).then(data => {
+                alert(data.message);
+                if (data.success) {
+                    document.getElementById('teacherModal').style.display = 'none';
+                    loadAdminData();
+                }
             });
         });
+
+        document.getElementById('subjectForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-subject-id').value;
+            const url = id ? `/admin/subject/update/${id}` : '/admin/subject/add';
+            const payload = {
+                name: document.getElementById('subject-name').value,
+                short_code: document.getElementById('subject-short-code').value,
+                classes_week: document.getElementById('subject-classes-week').value,
+                max_day: document.getElementById('subject-max-day').value
+            };
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            .then(res => res.json()).then(data => {
+                alert(data.message);
+                if (data.success) {
+                    document.getElementById('subjectModal').style.display = 'none';
+                    loadAdminData();
+                }
+            });
+        });
+        
+        document.getElementById('batchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-batch-id').value;
+            const url = id ? `/admin/batch/update/${id}` : '/admin/batch/add';
+            const selectedSubjects = Array.from(document.querySelectorAll('#batch-subjects input:checked')).map(el => {
+                return {
+                    id: el.value,
+                    classes: el.parentElement.querySelector('.classes-input').value || 0
+                }
+            });
+            const payload = {
+                name: document.getElementById('batch-name').value,
+                department: document.getElementById('batch-department').value,
+                level: document.getElementById('batch-level').value,
+                subjects: selectedSubjects
+            };
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            .then(res => res.json()).then(data => {
+                alert(data.message);
+                if (data.success) {
+                    document.getElementById('batchModal').style.display = 'none';
+                    loadAdminData();
+                }
+            });
+        });
+        
+        // --- TIMETABLE MANAGEMENT LOGIC ---
+        const adminBatchSelect = document.getElementById('adminBatchSelect');
+        const optimizeBatchBtn = document.getElementById('optimizeBatchBtn');
+        adminBatchSelect.addEventListener('change', () => {
+            const batchId = adminBatchSelect.value;
+            document.getElementById('batch-scheduler-status').textContent = '';
+            optimizeBatchBtn.disabled = !batchId;
+            if (!batchId) {
+                document.getElementById('admin-timetable-body').innerHTML = '';
+                document.getElementById('admin-timetable-head').innerHTML = '';
+                return;
+            };
+            fetch('/get_timetable', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `batch_id=${batchId}` })
+            .then(res => res.json())
+            .then(data => renderAdminTimetable(data));
+        });
+
+        function renderAdminTimetable(data) {
+            const tbody = document.getElementById('admin-timetable-body');
+            const thead = document.getElementById('admin-timetable-head');
+            tbody.innerHTML = '';
+            thead.innerHTML = '';
+            if (!data || data.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="6">No timetable data. Click "Optimize" to generate one.</td></tr>';
+                 return;
+            }
+
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            thead.innerHTML = `<tr><th>Time</th>${days.map(d => `<th>${d}</th>`).join('')}</tr>`;
+            
+            const timeSlots = [...new Set(data.map(item => item.time))].sort();
+            timeSlots.forEach(time => {
+                let rowHtml = `<tr><td>${time || 'N/A'}</td>`;
+                days.forEach(day => {
+                    const slotData = data.find(d => d.day_of_week === day && d.time === time);
+                    if(slotData) {
+                        rowHtml += `<td class="timetable-slot" data-batch-id="${adminBatchSelect.value}" data-day="${day}" data-period="${slotData.period}" data-subject-id="${slotData.subject_id}" data-teacher-id="${slotData.teacher_id}">
+                                        <strong>${slotData.subject_name}</strong><br><small>${slotData.teacher_name}</small>
+                                    </td>`;
+                    } else {
+                        const emptyPeriod = timeSlots.indexOf(time) + 1;
+                        rowHtml += `<td class="timetable-slot empty" data-batch-id="${adminBatchSelect.value}" data-day="${day}" data-period="${emptyPeriod}">---</td>`;
+                    }
+                });
+                rowHtml += '</tr>';
+                tbody.innerHTML += rowHtml;
+            });
+        }
+        
+        optimizeBatchBtn.addEventListener('click', () => {
+            const batchId = adminBatchSelect.value;
+            if (!batchId) return;
+            if (!confirm(`This will delete and regenerate the timetable for the selected batch. Are you sure?`)) return;
+
+            const statusDiv = document.getElementById('batch-scheduler-status');
+            optimizeBatchBtn.disabled = true;
+            optimizeBatchBtn.textContent = 'Optimizing...';
+            statusDiv.textContent = `Running scheduler for the selected batch...`;
+            statusDiv.style.color = 'blue';
+
+            const formData = new FormData();
+            formData.append('batch_id', batchId);
+            
+            fetch('/admin/run-scheduler-batch', { method: 'POST', body: new URLSearchParams(formData) })
+            .then(res => res.json())
+            .then(data => {
+                statusDiv.textContent = data.message;
+                statusDiv.style.color = data.success ? 'green' : 'red';
+                if(data.success) {
+                    adminBatchSelect.dispatchEvent(new Event('change')); // Refresh view
+                }
+            }).finally(() => {
+                optimizeBatchBtn.disabled = false;
+                optimizeBatchBtn.textContent = 'Optimize Timetable for this Batch';
+            });
+        });
+        
+        const editSlotModal = document.getElementById('editSlotModal');
+        document.getElementById('admin-timetable-body').addEventListener('click', function(e) {
+            const slot = e.target.closest('.timetable-slot');
+            if (!slot) return;
+            
+            document.getElementById('slot-info').textContent = `Editing slot on ${slot.dataset.day}, Period ${slot.dataset.period}`;
+            document.getElementById('edit-slot-batch-id').value = slot.dataset.batchId;
+            document.getElementById('edit-slot-day').value = slot.dataset.day;
+            document.getElementById('edit-slot-period').value = slot.dataset.period;
+            
+            const subjectSelect = document.getElementById('edit-slot-subject');
+            const teacherSelect = document.getElementById('edit-slot-teacher');
+            subjectSelect.innerHTML = '';
+            teacherSelect.innerHTML = '';
+
+            AppData.subjects.forEach(s => {
+                const isSelected = s.subject_id == slot.dataset.subjectId ? 'selected' : '';
+                subjectSelect.innerHTML += `<option value="${s.subject_id}" ${isSelected}>${s.subject_name}</option>`;
+            });
+            AppData.teachers.forEach(t => {
+                const isSelected = t.teacher_id == slot.dataset.teacherId ? 'selected' : '';
+                teacherSelect.innerHTML += `<option value="${t.teacher_id}" ${isSelected}>${t.name}</option>`;
+            });
+            editSlotModal.style.display = 'flex';
+        });
+
+        document.getElementById('editSlotForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const payload = {
+                batch_id: document.getElementById('edit-slot-batch-id').value,
+                day: document.getElementById('edit-slot-day').value,
+                period: document.getElementById('edit-slot-period').value,
+                subject_id: document.getElementById('edit-slot-subject').value,
+                teacher_id: document.getElementById('edit-slot-teacher').value,
+            };
+            fetch('/admin/update-slot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    editSlotModal.style.display = 'none';
+                    adminBatchSelect.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+        
+        // --- GLOBAL SCHEDULER BUTTON ---
+        document.getElementById('runSchedulerBtn').addEventListener('click', () => {
+             if (!confirm('Are you sure? This will generate a new timetable for ALL batches and overwrite everything.')) return;
+             const btn = document.getElementById('runSchedulerBtn');
+             const status = document.getElementById('scheduler-status');
+             btn.disabled = true;
+             btn.textContent = 'Generating...';
+             status.textContent = 'The global scheduler is running...';
+             status.style.color = 'blue';
+
+             fetch('/run-scheduler', { method: 'POST' })
+             .then(res => res.json())
+             .then(data => {
+                 status.textContent = data.message;
+                 status.style.color = data.success ? 'green' : 'red';
+             })
+             .finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'Generate Global Timetable';
+             });
+        });
+
+    });
     </script>
 </body>
 </html>
