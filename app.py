@@ -30,12 +30,14 @@ def get_db_connection():
 def home():
     """Renders the main timetable viewer page and provides batches grouped by department."""
     conn = get_db_connection()
-    # Use DictCursor to get column names
+    # Use DictCursor to easily access columns by name (e.g., batch['department'])
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    # Fetch department along with other details
+    
+    # Fetch the department along with other batch details
     cur.execute("SELECT batch_id, batch_name, department FROM batches ORDER BY department, batch_name;")
     
-    # Group batches by department
+    # --- This is the new logic ---
+    # Group the flat list of batches into a dictionary by department
     batches_by_dept = {}
     for batch in cur.fetchall():
         dept = batch['department']
@@ -45,7 +47,8 @@ def home():
         
     cur.close()
     conn.close()
-    # Send the correct variable name to the template
+    
+    # Send the correctly named and structured variable to the template
     return render_template('index.html', batches_by_dept=batches_by_dept)
 
 
