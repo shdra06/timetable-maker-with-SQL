@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>University Timetable</title>
+    <style>
+        :root { --primary-color: #007bff; --light-gray: #f8f9fa; --dark-gray: #343a40; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--light-gray); margin: 0; color: var(--dark-gray); }
+        .page-container { display: flex; }
+        .sidebar {
+            width: 280px;
+            background: #fff;
+            height: 100vh;
+            position: fixed;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            padding-top: 20px;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 0 20px;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .dept-header {
+            padding: 12px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #f1f3f5;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .batch-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: none;
+        }
+        .batch-list.active { display: block; }
+        .batch-list li a {
+            display: block;
+            padding: 12px 25px;
+            text-decoration: none;
+            color: #495057;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        .batch-list li a:hover, .batch-list li a.selected {
+            background-color: #e9ecef;
+            color: var(--primary-color);
+            font-weight: 500;
+            border-left: 3px solid var(--primary-color);
+        }
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+            width: calc(100% - 280px);
+        }
+        .timetable-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        #currentBatchName { font-size: 2rem; font-weight: bold; }
+        .header-buttons { display: flex; gap: 1rem; } /* NEW: Container for buttons */
+        .header-buttons a, .header-buttons button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        #printBtn { background-color: #28a745; }
+        #adminBtn { background-color: #17a2b8; } /* NEW: Style for Admin button */
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        th, td { border: 1px solid #dee2e6; padding: 1rem; text-align: center; }
+        th { background-color: var(--dark-gray); color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="page-container">
+        <div class="sidebar">
+            <div class="sidebar-header">Select Batch</div>
+            {% for dept, batches in batches_by_dept.items() %}
+                <div class="dept-header" data-dept="{{ dept }}">
+                    <span>{{ dept }}</span>
+                    <span>&#9662;</span>
+                </div>
+                <ul class="batch-list" id="dept-{{ dept }}">
+                    {% for batch in batches %}
+                        <li><a href="#" class="batch-link" data-batch-id="{{ batch.batch_id }}" data-batch-name="{{ batch.batch_name }}">{{ batch.batch_name }}</a></li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+        </div>
+
+        <div class="main-content">
+            <div class="timetable-header">
+                <h1 id="currentBatchName">Please select a batch</h1>
+                
+                <div class="header-buttons" >
+                    <button id="printBtn" style="display: none;">Print Timetable</button>
+                    <a href="/admin" id="adminBtn">Admin Panel</a>
+                </div>
+            </div>
+            <table id="timetable">
+                <thead id="timetable-head"></thead>
+                <tbody id="timetable-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const timetableBody = document.getElementById('timetable-body');
+        const timetableHead = document.getElementById('timetable-head');
+        const currentBatchName = document.getElementById('currentBatchName');
+        const headerButtons = document.getElementById('printBtn');
+
+        // Sidebar Logic
+        document.querySelectorAll('.dept-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const dept = header.dataset.dept;
+                const batchList = document.getElementById(`dept-${dept}`);
+                batchList.classList.toggle('active');
+                header.querySelector('span:last-child').innerHTML = batchList.classList.contains('active') ? '&#9652;' : '&#9662;';
+            });
+        });
+
+        // Batch Selection and Timetable Fetching
+        document.querySelectorAll('.batch-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                document.querySelectorAll('.batch-link').forEach(l => l.classList.remove('selected'));
+                link.classList.add('selected');
+
+                const batchId = link.dataset.batchId;
+                const batchName = link.dataset.batchName;
+                currentBatchName.textContent = `Timetable for ${batchName}`;
+                headerButtons.style.display = 'flex'; // Show buttons
+
+                fetch('/get_timetable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `batch_id=${batchId}`
+                })
+                .then(response => response.json())
+                .then(data => renderTimetable(data))
+                .catch(error => console.error('Error fetching timetable:', error));
+            });
+        });
+
+        // Render Timetable
+        function renderTimetable(data) {
+            timetableHead.innerHTML = '';
+            timetableBody.innerHTML = '';
+
+            if (data.length === 0) {
+                timetableBody.innerHTML = '<tr><td colspan="6">No timetable data available for this batch.</td></tr>';
+                return;
+            }
+            
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            timetableHead.innerHTML = `<tr><th>Time</th>${days.map(d => `<th>${d}</th>`).join('')}</tr>`;
+
+            const timeSlots = [...new Set(data.map(item => item.time))].sort();
+
+            let tableBodyHtml = '';
+            timeSlots.forEach(time => {
+                tableBodyHtml += `<tr><td>${time}</td>`;
+                days.forEach(day => {
+                    const slotData = data.find(d => d.day_of_week === day && d.time === time);
+                    if (slotData) {
+                        tableBodyHtml += `<td>
+                                            <div><strong>${slotData.subject_name}</strong></div>
+                                            <div><small>${slotData.teacher_name}</small></div>
+                                          </td>`;
+                    } else {
+                        tableBodyHtml += (time && time.toLowerCase().includes('lunch')) ? `<td style="background-color: #f0f0f0;"><strong>LUNCH</strong></td>` : '<td>---</td>';
+                    }
+                });
+                tableBodyHtml += '</tr>';
+            });
+            timetableBody.innerHTML = tableBodyHtml;
+        }
+
+        // Print Button Logic
+        document.getElementById('printBtn').addEventListener('click', () => {
+            window.print();
+        });
+
+        // Initial message
+        timetableBody.innerHTML = '<tr><td colspan="6">Please select a department and a batch from the sidebar.</td></tr>';
+    });
+    </script>
+</body>
+</html>

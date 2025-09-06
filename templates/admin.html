@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <style>
+        :root { --primary-color: #007bff; --success-color: #28a745; --light-gray: #f8f9fa; --dark-gray: #343a40; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--light-gray); margin: 0; color: var(--dark-gray); }
+        .sidebar { width: 250px; background: var(--dark-gray); color: white; position: fixed; height: 100%; padding-top: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .sidebar h2 { text-align: center; }
+        .sidebar a { display: block; color: #adb5bd; padding: 16px 20px; text-decoration: none; transition: all 0.3s; cursor: pointer; border-left: 3px solid transparent; }
+        .sidebar a:hover, .sidebar a.active { background-color: #495057; color: white; border-left: 3px solid var(--primary-color); }
+        .main-content { margin-left: 250px; padding: 2rem; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .logout-btn { background: #dc3545; color: white; padding: 0.5rem 1rem; border-radius: 5px; text-decoration: none; }
+        .content-section { display: none; }
+        .content-section.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 2rem; }
+        button { background-color: var(--primary-color); color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; transition: background-color 0.3s; }
+        button[type="submit"] { background-color: var(--success-color); }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+        th, td { border: 1px solid #dee2e6; padding: 0.75rem; text-align: left; }
+        th { background-color: #e9ecef; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { margin-bottom: 0.5rem; font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; box-sizing: border-box; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Admin Panel</h2>
+        <a class="nav-link active" data-target="dashboard">Dashboard</a>
+        <a class="nav-link" data-target="teachers">Manage Teachers</a>
+        <a class="nav-link" data-target="subjects">Manage Subjects</a>
+        <a class="nav-link" data-target="batches">Manage Batches</a>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <h1>Welcome, {{ username }}!</h1>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+        </header>
+
+        <div id="dashboard" class="content-section card active">
+            <h2>Scheduler Control</h2>
+            <p>Click the button to generate a new timetable. This will overwrite the existing schedule.</p>
+            <button id="runSchedulerBtn">Generate New Timetable</button>
+            <div id="scheduler-status" style="margin-top: 1rem; font-weight: bold;"></div>
+        </div>
+
+        <div id="teachers" class="content-section card">
+            <h2>Manage Teachers</h2>
+            <div class="card" style="margin-bottom: 2rem; background-color: #f8f9fa;">
+                <h3>Add New Teacher</h3>
+                <form id="addTeacherForm">
+                    <div class="form-grid">
+                        <div class="form-group"><label for="teacherName">Name</label><input type="text" name="name" required></div>
+                        <div class="form-group">
+                            <label for="teacherSpecDropdown">Specialization</label>
+                            <select name="specialization" id="teacherSpecDropdown" required>
+                                <option value="">-- Loading Subjects --</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label for="teacherEmail">Email</label><input type="email" name="email" required></div>
+                        <div class="form-group"><label for="teacherMax">Max Classes/Week</label><input type="number" name="max_classes" required></div>
+                    </div>
+                    <button type="submit">Add Teacher</button>
+                </form>
+            </div>
+            <h3>Existing Teachers</h3>
+            <table><thead><tr><th>ID</th><th>Name</th><th>Specialization</th><th>Email</th><th>Max Classes/Week</th></tr></thead><tbody id="teachers-table"></tbody></table>
+        </div>
+
+        <div id="subjects" class="content-section card">
+            <h2>Manage Subjects</h2>
+            <div class="card" style="margin-bottom: 2rem; background-color: #f8f9fa;">
+                <h3>Add New Subject</h3>
+                <form id="addSubjectForm">
+                     <div class="form-grid">
+                        <div class="form-group"><label>Subject Name</label><input type="text" name="subject_name" required></div>
+                        <div class="form-group"><label>Short Code (e.g., 'P' for Physics)</label><input type="text" name="short_code" required></div>
+                        <div class="form-group"><label>Default Classes/Week</label><input type="number" name="classes_per_week" required></div>
+                        <div class="form-group"><label>Max Classes/Day</label><input type="number" name="max_per_day" required></div>
+                    </div>
+                    <button type="submit">Add Subject</button>
+                </form>
+            </div>
+            <h3>Existing Subjects</h3>
+            <table><thead><tr><th>ID</th><th>Name</th><th>Short Code</th><th>Classes/Week</th><th>Max/Day</th></tr></thead><tbody id="subjects-table"></tbody></table>
+        </div>
+        
+        <div id="batches" class="content-section card">
+            <h2>Manage Batches</h2>
+            <h3>Existing Batches</h3>
+            <table><thead><tr><th>ID</th><th>Department</th><th>Level</th><th>Batch Name</th></tr></thead><tbody id="batches-table"></tbody></table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Navigation Logic ---
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.content-section');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+                    link.classList.add('active');
+                    document.getElementById(link.dataset.target).classList.add('active');
+                });
+            });
+
+            // --- DATA LOADING & DYNAMIC POPULATION ---
+            function loadAdminData() {
+                fetch('/admin/data')
+                    .then(res => res.json())
+                    .then(data => {
+                        const teachersTbody = document.getElementById('teachers-table');
+                        teachersTbody.innerHTML = '';
+                        data.teachers.forEach(t => {
+                            teachersTbody.innerHTML += `<tr><td>${t.teacher_id}</td><td>${t.name}</td><td>${t.subject_specialization}</td><td>${t.email}</td><td>${t.max_classes_per_week}</td></tr>`;
+                        });
+                        
+                        const subjectsTbody = document.getElementById('subjects-table');
+                        const specializationDropdown = document.getElementById('teacherSpecDropdown');
+                        subjectsTbody.innerHTML = '';
+                        specializationDropdown.innerHTML = '<option value="">-- Select a Subject --</option>';
+                        data.subjects.forEach(s => {
+                            subjectsTbody.innerHTML += `<tr><td>${s.subject_id}</td><td>${s.subject_name}</td><td>${s.short_code}</td><td>${s.classes_per_week}</td><td>${s.max_per_day}</td></tr>`;
+                            specializationDropdown.innerHTML += `<option value="${s.subject_name}">${s.subject_name}</option>`;
+                        });
+
+                        const batchesTbody = document.getElementById('batches-table');
+                        batchesTbody.innerHTML = '';
+                        data.batches.forEach(b => {
+                            batchesTbody.innerHTML += `<tr><td>${b.batch_id}</td><td>${b.department}</td><td>${b.level}</td><td>${b.batch_name}</td></tr>`;
+                        });
+                    });
+            }
+            loadAdminData();
+
+            // --- FORM SUBMISSION LOGIC ---
+            document.getElementById('addTeacherForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                fetch('/admin/add-teacher', { method: 'POST', body: new URLSearchParams(formData) })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.success) {
+                        e.target.reset();
+                        loadAdminData();
+                    }
+                });
+            });
+
+            document.getElementById('addSubjectForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                fetch('/admin/add-subject', { method: 'POST', body: new URLSearchParams(formData) })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.success) {
+                        e.target.reset();
+                        loadAdminData();
+                    }
+                });
+            });
+            
+            // --- SCHEDULER BUTTON ---
+            document.getElementById('runSchedulerBtn').addEventListener('click', () => {
+                if (!confirm('Are you sure you want to generate a new timetable?')) return;
+                const btn = document.getElementById('runSchedulerBtn');
+                const status = document.getElementById('scheduler-status');
+                btn.disabled = true;
+                btn.textContent = 'Generating...';
+                status.textContent = 'Running...';
+                
+                fetch('/run-scheduler', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    status.textContent = `Status: ${data.message}`;
+                    status.style.color = data.success ? 'green' : 'red';
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.textContent = 'Generate New Timetable';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
