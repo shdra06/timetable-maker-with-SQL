@@ -2,114 +2,265 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>University Timetable</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Timetable Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary-color: #007bff; --light-gray: #f8f9fa; --dark-gray: #343a40; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--light-gray); margin: 0; color: var(--dark-gray); }
-        .page-container { display: flex; }
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-color: #f8f9fa;
+            --sidebar-bg: #ffffff;
+            --header-bg: #343a40;
+            --highlight-bg: #fff3cd;
+            --ongoing-glow: #28a745;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            color: var(--dark-gray);
+            display: flex;
+        }
+
         .sidebar {
             width: 280px;
-            background: #fff;
+            background: var(--sidebar-bg);
             height: 100vh;
             position: fixed;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            padding-top: 20px;
+            top: 0;
+            left: 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
             overflow-y: auto;
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000;
         }
+
         .sidebar-header {
-            padding: 0 20px;
-            margin-bottom: 1rem;
+            padding: 1.5rem;
             font-size: 1.5rem;
-            font-weight: bold;
+            font-weight: 700;
             color: var(--primary-color);
+            border-bottom: 1px solid #dee2e6;
         }
+
         .dept-header {
-            padding: 12px 20px;
-            font-weight: bold;
+            padding: 1rem 1.5rem;
+            font-weight: 700;
             cursor: pointer;
             background-color: #f1f3f5;
             border-bottom: 1px solid #dee2e6;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background-color 0.2s;
         }
+        .dept-header:hover {
+            background-color: #e9ecef;
+        }
+        .dept-header .arrow {
+            transition: transform 0.3s;
+        }
+        .dept-header.active .arrow {
+            transform: rotate(180deg);
+        }
+
         .batch-list {
             list-style: none;
             padding: 0;
             margin: 0;
-            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
         }
-        .batch-list.active { display: block; }
+        .batch-list.active {
+            max-height: 500px; /* Adjust as needed */
+        }
         .batch-list li a {
             display: block;
-            padding: 12px 25px;
+            padding: 0.8rem 1.5rem 0.8rem 2.5rem;
             text-decoration: none;
             color: #495057;
             transition: all 0.2s;
-            border-left: 3px solid transparent;
+            border-left: 4px solid transparent;
         }
         .batch-list li a:hover, .batch-list li a.selected {
             background-color: #e9ecef;
             color: var(--primary-color);
             font-weight: 500;
-            border-left: 3px solid var(--primary-color);
+            border-left: 4px solid var(--primary-color);
         }
+
         .main-content {
             margin-left: 280px;
             padding: 2rem;
             width: calc(100% - 280px);
+            transition: margin-left 0.3s ease-in-out;
         }
+
         .timetable-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
         }
-        #currentBatchName { font-size: 2rem; font-weight: bold; }
-        .header-buttons { display: flex; gap: 1rem; } /* NEW: Container for buttons */
+        #currentBatchName {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .header-controls {
+            text-align: right;
+        }
+        #live-clock {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        #current-date {
+            font-size: 1rem;
+            color: var(--secondary-color);
+        }
+        .header-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
         .header-buttons a, .header-buttons button {
-            padding: 0.5rem 1rem;
+            padding: 0.6rem 1.2rem;
             border: none;
             border-radius: 5px;
             color: white;
             text-decoration: none;
             font-size: 0.9rem;
+            font-weight: 500;
             cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .header-buttons a:hover, .header-buttons button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
         #printBtn { background-color: #28a745; }
-        #adminBtn { background-color: #17a2b8; } /* NEW: Style for Admin button */
-        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        th, td { border: 1px solid #dee2e6; padding: 1rem; text-align: center; }
-        th { background-color: var(--dark-gray); color: white; }
+        #adminBtn { background-color: #17a2b8; }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            min-width: 800px; /* Ensures table is readable on small screens before scrolling */
+            border-collapse: collapse;
+            background: white;
+            box-shadow: var(--card-shadow);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 1rem;
+            text-align: center;
+            position: relative;
+        }
+        th {
+            background-color: var(--header-bg);
+            color: white;
+        }
+        td {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+        }
+        td:not(.empty-slot):hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .slot { font-weight: 500; }
+        .slot small {
+            display: block;
+            margin-top: 0.25rem;
+            color: var(--secondary-color);
+        }
+
+        .today-column {
+            background-color: var(--highlight-bg) !important;
+        }
+
+        .ongoing-class {
+            background-color: var(--ongoing-glow) !important;
+            color: white !important;
+            animation: pulse 1.5s infinite;
+        }
+        .ongoing-class small { color: #f0f0f0 !important; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+        }
+
+        /* Mobile Responsive View */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 1rem;
+                box-sizing: border-box;
+            }
+            #currentBatchName { font-size: 1.5rem; }
+            #live-clock { font-size: 1.2rem; }
+            #current-date { font-size: 0.9rem; }
+            th, td { padding: 0.75rem; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="page-container">
-        <div class="sidebar">
-            <div class="sidebar-header">Select Batch</div>
-            {% for dept, batches in batches_by_dept.items() %}
-                <div class="dept-header" data-dept="{{ dept }}">
-                    <span>{{ dept }}</span>
-                    <span>&#9662;</span>
-                </div>
-                <ul class="batch-list" id="dept-{{ dept }}">
-                    {% for batch in batches %}
-                        <li><a href="#" class="batch-link" data-batch-id="{{ batch.batch_id }}" data-batch-name="{{ batch.batch_name }}">{{ batch.batch_name }}</a></li>
-                    {% endfor %}
-                </ul>
-            {% endfor %}
-        </div>
+    <div class="sidebar">
+        <div class="sidebar-header">Select Batch</div>
+        {% for dept, batches in batches_by_dept.items() %}
+            <div class="dept-header" data-dept="{{ dept }}">
+                <span>{{ dept }}</span>
+                <span class="arrow">&#9662;</span>
+            </div>
+            <ul class="batch-list" id="dept-{{ dept }}">
+                {% for batch in batches %}
+                    <li><a href="#" class="batch-link" data-batch-id="{{ batch.batch_id }}" data-batch-name="{{ batch.batch_name }}">{{ batch.batch_name }}</a></li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
 
-        <div class="main-content">
-            <div class="timetable-header">
-                <h1 id="currentBatchName">Please select a batch</h1>
-                
-                <div class="header-buttons" >
-                    <button id="printBtn" style="display: none;">Print Timetable</button>
+    <div class="main-content">
+        <div class="timetable-header">
+            <h1 id="currentBatchName">Welcome!</h1>
+            <div class="header-controls">
+                <div id="live-clock"></div>
+                <div id="current-date"></div>
+                <div class="header-buttons" id="header-buttons-container" style="display: none;">
+                    <button id="printBtn">Print</button>
                     <a href="/admin" id="adminBtn">Admin Panel</a>
                 </div>
             </div>
+        </div>
+        <div class="table-container">
             <table id="timetable">
                 <thead id="timetable-head"></thead>
                 <tbody id="timetable-body"></tbody>
@@ -122,30 +273,41 @@
         const timetableBody = document.getElementById('timetable-body');
         const timetableHead = document.getElementById('timetable-head');
         const currentBatchName = document.getElementById('currentBatchName');
-        const headerButtons = document.getElementById('printBtn');
+        const headerButtons = document.getElementById('header-buttons-container');
+        const clockDiv = document.getElementById('live-clock');
+        const dateDiv = document.getElementById('current-date');
+        let currentTimetableData = [];
 
-        // Sidebar Logic
+        function updateClockAndHighlights() {
+            const now = new Date();
+            clockDiv.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            dateDiv.textContent = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            // Re-render to update highlights without a new fetch
+            if (currentTimetableData.length > 0) {
+                renderTimetable(currentTimetableData);
+            }
+        }
+        setInterval(updateClockAndHighlights, 60000); // Update every minute
+        updateClockAndHighlights();
+
         document.querySelectorAll('.dept-header').forEach(header => {
             header.addEventListener('click', () => {
-                const dept = header.dataset.dept;
-                const batchList = document.getElementById(`dept-${dept}`);
+                const batchList = document.getElementById(`dept-${header.dataset.dept}`);
+                header.classList.toggle('active');
                 batchList.classList.toggle('active');
-                header.querySelector('span:last-child').innerHTML = batchList.classList.contains('active') ? '&#9652;' : '&#9662;';
             });
         });
 
-        // Batch Selection and Timetable Fetching
         document.querySelectorAll('.batch-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                
                 document.querySelectorAll('.batch-link').forEach(l => l.classList.remove('selected'));
                 link.classList.add('selected');
 
                 const batchId = link.dataset.batchId;
-                const batchName = link.dataset.batchName;
-                currentBatchName.textContent = `Timetable for ${batchName}`;
-                headerButtons.style.display = 'flex'; // Show buttons
+                currentBatchName.textContent = `Timetable for ${link.dataset.batchName}`;
+                headerButtons.style.display = 'flex';
 
                 fetch('/get_timetable', {
                     method: 'POST',
@@ -153,12 +315,14 @@
                     body: `batch_id=${batchId}`
                 })
                 .then(response => response.json())
-                .then(data => renderTimetable(data))
+                .then(data => {
+                    currentTimetableData = data; // Store data for live updates
+                    renderTimetable(data);
+                })
                 .catch(error => console.error('Error fetching timetable:', error));
             });
         });
 
-        // Render Timetable
         function renderTimetable(data) {
             timetableHead.innerHTML = '';
             timetableBody.innerHTML = '';
@@ -169,36 +333,68 @@
             }
             
             const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-            timetableHead.innerHTML = `<tr><th>Time</th>${days.map(d => `<th>${d}</th>`).join('')}</tr>`;
+            const now = new Date();
+            const today = now.toLocaleDateString('en-US', { weekday: 'long' });
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+
+            let headerHtml = '<tr><th>Time</th>';
+            days.forEach((day, index) => {
+                headerHtml += `<th class="${day === today ? 'today-column' : ''}">${day}</th>`;
+            });
+            headerHtml += '</tr>';
+            timetableHead.innerHTML = headerHtml;
 
             const timeSlots = [...new Set(data.map(item => item.time))].sort();
 
             let tableBodyHtml = '';
             timeSlots.forEach(time => {
                 tableBodyHtml += `<tr><td>${time}</td>`;
-                days.forEach(day => {
+                days.forEach((day) => {
                     const slotData = data.find(d => d.day_of_week === day && d.time === time);
+                    let cellClass = day === today ? 'today-column' : '';
+                    let cellContent = '<div class="empty-slot">---</div>';
+
                     if (slotData) {
-                        tableBodyHtml += `<td>
-                                            <div><strong>${slotData.subject_name}</strong></div>
-                                            <div><small>${slotData.teacher_name}</small></div>
-                                          </td>`;
-                    } else {
-                        tableBodyHtml += (time && time.toLowerCase().includes('lunch')) ? `<td style="background-color: #f0f0f0;"><strong>LUNCH</strong></td>` : '<td>---</td>';
+                        const isOngoing = isClassOngoing(time, day, today, currentTime);
+                        if (isOngoing) {
+                            cellClass += ' ongoing-class';
+                        }
+                        
+                        cellContent = `<div class="slot">
+                                         <strong>${slotData.subject_name}</strong>
+                                         <small>${slotData.teacher_name}</small>
+                                       </div>`;
+                    } else if (time && time.toLowerCase().includes('lunch')) {
+                        cellContent = `<strong>LUNCH</strong>`;
                     }
+                    
+                    tableBodyHtml += `<td class="${cellClass}">${cellContent}</td>`;
                 });
                 tableBodyHtml += '</tr>';
             });
             timetableBody.innerHTML = tableBodyHtml;
         }
 
-        // Print Button Logic
-        document.getElementById('printBtn').addEventListener('click', () => {
-            window.print();
-        });
+        function isClassOngoing(timeString, day, today, currentTime) {
+            if (day !== today || !timeString || timeString.toLowerCase().includes('lunch')) return false;
+            
+            try {
+                const [startTime, endTime] = timeString.split('-').map(t => t.trim());
+                const [startHour, startMinute] = startTime.split(':').map(Number);
+                const [endHour, endMinute] = endTime.split(':').map(Number);
+                
+                const startTotalMinutes = startHour * 60 + startMinute;
+                const endTotalMinutes = endHour * 60 + endMinute;
 
-        // Initial message
-        timetableBody.innerHTML = '<tr><td colspan="6">Please select a department and a batch from the sidebar.</td></tr>';
+                return currentTime >= startTotalMinutes && currentTime < endTotalMinutes;
+            } catch (e) {
+                return false; // In case of parsing error
+            }
+        }
+
+        document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+        timetableBody.innerHTML = '<tr><td colspan="6" style="padding: 2rem;">Please select a department and a batch from the sidebar to begin.</td></tr>';
     });
     </script>
 </body>
