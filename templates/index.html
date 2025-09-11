@@ -3,299 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>University Timetable Dashboard</title>
+    <title>Smart Timetable Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #007bff;
-            --secondary-color: #6c757d;
-            --background-color: #f8f9fa;
-            --sidebar-bg: #ffffff;
-            --header-bg: #343a40;
-            --highlight-bg: #fff3cd;
-            --ongoing-glow: #28a745;
-            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --primary-color: #3b82f6;
+            --secondary-color: #6b7280;
+            --header-bg: #1f2937;
+            --highlight-bg: #fef9c3;
+            --ongoing-glow: #10b981;
+            --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --card-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
 
+        html { scroll-behavior: smooth; }
         body {
-    font-family: 'Roboto', sans-serif;
-    background-color: var(--background-color);
-    margin: 0;
-    color: var(--dark-gray);
-    display: flex;
-    justify-content: center;  
-    padding: 2rem;            
-    gap: 2rem;                
-}
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #111827;
+            margin: 0;
+        }
+
+        .page-header {
+            background-color: white;
+            padding: 0.75rem 2rem;
+            box-shadow: var(--card-shadow);
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .page-container {
+            display: flex;
+            gap: 2rem;
+            padding: 2rem;
+            align-items: flex-start;
+        }
 
         .sidebar {
-    width: 260px;
-    background: var(--sidebar-bg);
-    border-radius: 12px;
-    box-shadow: var(--card-shadow);
-    padding-bottom: 1rem;
-    position: relative; 
-    height: auto;        
-    max-height: 90vh;    
-    overflow-y: auto;
-}
-
+            width: 300px;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: var(--card-shadow);
+            flex-shrink: 0;
+            position: sticky;
+            top: calc(4rem + 2rem);
+            max-height: calc(100vh - 6rem);
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+        }
         .sidebar-header {
-    padding: 1.2rem;
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    border-bottom: 1px solid #dee2e6;
-    text-align: center;
-}
-
+            padding: 1.2rem 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            border-bottom: 1px solid #e5e7eb;
+        }
         .dept-header {
             padding: 1rem 1.5rem;
             font-weight: 700;
             cursor: pointer;
-            background-color: #f1f3f5;
-            border-bottom: 1px solid #dee2e6;
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: background-color 0.2s;
         }
-        .dept-header:hover {
-            background-color: #e9ecef;
-        }
-        .dept-header .arrow {
-            transition: transform 0.3s;
-        }
-        .dept-header.active .arrow {
-            transform: rotate(180deg);
-        }
-
+        .dept-header:hover { background-color: #f9fafb; }
+        .dept-header .arrow { transition: transform 0.3s; }
+        .dept-header.active .arrow { transform: rotate(180deg); }
         .batch-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            max-height: 0;
-            overflow: hidden;
+            list-style: none; padding: 0; margin: 0;
+            max-height: 0; overflow: hidden;
             transition: max-height 0.3s ease-in-out;
         }
-        .batch-list.active {
-            max-height: 500px; /* Adjust as needed */
-        }
+        .batch-list.active { max-height: 500px; }
         .batch-list li a {
-            display: block;
-            padding: 0.8rem 1.5rem 0.8rem 2.5rem;
-            text-decoration: none;
-            color: #495057;
-            transition: all 0.2s;
-            border-left: 4px solid transparent;
+            display: block; padding: 0.8rem 1.5rem 0.8rem 2.5rem;
+            text-decoration: none; color: #4b5563;
+            transition: all 0.2s; border-left: 4px solid transparent;
         }
         .batch-list li a:hover, .batch-list li a.selected {
-            background-color: #e9ecef;
-            color: var(--primary-color);
-            font-weight: 500;
-            border-left: 4px solid var(--primary-color);
+            background-color: #eff6ff; color: var(--primary-color);
+            font-weight: 500; border-left-color: var(--primary-color);
         }
 
-        .main-content {
-    flex: 1;
-    padding: 2rem;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: var(--card-shadow);
-    min-width: 700px;
-}
-
-        .timetable-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-        #currentBatchName {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0;
-        }
-        .header-controls {
-            text-align: right;
-        }
-        #live-clock {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-        #current-date {
-            font-size: 1rem;
-            color: var(--secondary-color);
-        }
-        .header-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        .header-buttons a, .header-buttons button {
-            padding: 0.6rem 1.2rem;
-            border: none;
-            border-radius: 5px;
-            color: white;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .header-buttons a:hover, .header-buttons button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        #printBtn { background-color: #28a745; }
-        #adminBtn { background-color: #17a2b8; }
-        
-        .table-container {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            min-width: 800px; /* Ensures table is readable on small screens before scrolling */
-            border-collapse: collapse;
+        .main-content { flex-grow: 1; min-width: 0; }
+        .welcome-panel, .timetable-card {
             background: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
             box-shadow: var(--card-shadow);
-            border-radius: 8px;
-            overflow: hidden;
+            border: 1px solid #e5e7eb;
         }
-        th, td {
-            border: 1px solid #dee2e6;
-            padding: 1rem;
-            text-align: center;
-            position: relative;
+        
+        .welcome-panel { padding: 4rem 2rem; text-align: center; }
+        .timetable-header { margin-bottom: 2rem; }
+        #currentBatchName { font-size: 2.25rem; font-weight: 900; line-height: 1.1; }
+        
+        .header-controls { text-align: right; }
+        #live-clock { font-size: 1.25rem; font-weight: 500; color: #374151; }
+        #current-date { font-size: 0.875rem; color: var(--secondary-color); }
+        .header-buttons { display: flex; gap: 1rem; margin-top: 1rem; justify-content: flex-end; }
+        .header-buttons a, .header-buttons button {
+            padding: 0.5rem 1rem; border: none; border-radius: 0.5rem;
+            color: white; text-decoration: none; font-size: 0.875rem;
+            font-weight: 500; cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--card-shadow);
         }
-        th {
-            background-color: var(--header-bg);
-            color: white;
+        #printBtn { background-color: #22c55e; }
+        #adminBtn { background-color: #3b82f6; }
+        
+        .table-container { overflow-x: auto; }
+        table {
+            width: 100%; border-collapse: collapse;
+            border-radius: 0.75rem; overflow: hidden;
         }
-        td {
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s;
-        }
-        td:not(.empty-slot):hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-            z-index: 10;
-        }
-
-        .slot { font-weight: 500; }
-        .slot small {
-            display: block;
-            margin-top: 0.25rem;
-            color: var(--secondary-color);
-        }
-
+        th, td { border: 1px solid #e5e7eb; padding: 1rem; text-align: center; position: relative; }
+        th { background-color: var(--header-bg); color: white; font-weight: 500; }
+        tbody tr:nth-child(even) { background-color: #f9fafb; }
+        
         .today-column {
             background-color: var(--highlight-bg) !important;
-            color: var(--dark-gray) !important;
-            
+            color: #1f2937 !important;
         }
-
         .ongoing-class {
             background-color: var(--ongoing-glow) !important;
             color: white !important;
-            animation: pulse 1.5s infinite;
         }
-        .ongoing-class small { color: #f0f0f0 !important; }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
-            70% { box-shadow: 0 0 0 12px rgba(40, 167, 69, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-        }
-
-        .mobile-menu-toggle {
-            display: none;
-        }
-
-        /* Mobile Responsive View */
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: static;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        
+        /* --- NEW: Print-Specific Styles --- */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            .page-header, .sidebar, .charts-container, .welcome-panel {
+                display: none !important; /* Hide all unnecessary elements */
+            }
+            .page-container {
+                padding: 0;
             }
             .main-content {
-                margin-left: 0;
-                width: 100%;
-                padding: 1rem;
-                box-sizing: border-box;
+                width: 100% !important;
+                padding: 0;
             }
-            #currentBatchName { font-size: 1.5rem; }
-            #live-clock { font-size: 1.2rem; }
-            #current-date { font-size: 0.9rem; }
-            th, td { padding: 0.75rem; }
+            .timetable-card {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+            }
+            table {
+                font-size: 12px;
+            }
+            th, td {
+                padding: 0.5rem;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .page-container { flex-direction: column; }
+            .sidebar { width: 100%; position: static; max-height: none; margin-bottom: 2rem; }
         }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="sidebar-header">Select Batch</div>
-        {% for dept, batches in batches_by_dept.items() %}
-            <div class="dept-header" data-dept="{{ dept }}">
-                <span>{{ dept }}</span>
-                <span class="arrow">&#9662;</span>
-            </div>
-            <ul class="batch-list" id="dept-{{ dept }}">
-                {% for batch in batches %}
-                    <li><a href="#" class="batch-link" data-batch-id="{{ batch.batch_id }}" data-batch-name="{{ batch.batch_name }}">{{ batch.batch_name }}</a></li>
-                {% endfor %}
-            </ul>
-        {% endfor %}
-    </div>
+    <header class="page-header">
+        <h1 class="text-xl font-bold text-gray-800">Smart Timetable Dashboard</h1>
+        <div class="header-controls">
+            <div id="live-clock"></div>
+            <div id="current-date"></div>
+        </div>
+        <div class="header-buttons" id="header-buttons-container">
+            <button id="printBtn" style="display: none;">Print</button>
+            <a href="/admin" id="adminBtn">Admin Panel</a>
+        </div>
+    </header>
 
-    <div class="main-content">
-        <div class="timetable-header">
-            <h1 id="currentBatchName">Welcome!</h1>
-            <div class="header-controls">
-                <div id="live-clock"></div>
-                <div id="current-date"></div>
-                <div class="header-buttons" id="header-buttons-container" style="display: none;">
-                    <button id="printBtn">Print</button>
-                    <a href="/admin" id="adminBtn">Admin Panel</a>
+    <div class="page-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">Select Batch</div>
+            {% for dept, batches in batches_by_dept.items() %}
+                <div class="dept-header" data-dept="{{ dept }}">
+                    <span>{{ dept }}</span>
+                    <span class="arrow">&#9662;</span>
+                </div>
+                <ul class="batch-list" id="dept-{{ dept }}">
+                    {% for batch in batches %}
+                        <li><a href="#" class="batch-link" data-batch-id="{{ batch.batch_id }}" data-batch-name="{{ batch.batch_name }}">{{ batch.batch_name }}</a></li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+        </aside>
+
+        <main class="main-content">
+            <div id="welcomePanel" class="welcome-panel">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                <h3 class="mt-2 text-lg font-medium text-gray-900">Welcome to the Dashboard</h3>
+                <p class="mt-1 text-sm text-gray-500">Please select a department and a batch from the sidebar to view its timetable.</p>
+            </div>
+
+            <div id="timetablePanel" class="timetable-card" style="display: none;">
+                <div class="timetable-header">
+                    <h2 id="currentBatchName"></h2>
+                </div>
+                <div class="table-container">
+                    <table id="timetable">
+                        <thead id="timetable-head"></thead>
+                        <tbody id="timetable-body"></tbody>
+                    </table>
+                </div>
+                <div class="charts-container" style="margin-top:2rem; display:flex; gap:2rem; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:300px; background:#f9fafb; padding:1.5rem; border-radius:0.75rem; border: 1px solid #e5e7eb;">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Classes per Day</h3>
+                        <canvas id="dailyClassesChart"></canvas>
+                    </div>
+                    <div style="flex:1; min-width:300px; background:#f9fafb; padding:1.5rem; border-radius:0.75rem; border: 1px solid #e5e7eb;">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Subject Distribution</h3>
+                        <canvas id="subjectDistributionChart" ></canvas>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="table-container">
-            <table id="timetable">
-                <thead id="timetable-head"></thead>
-                <tbody id="timetable-body"></tbody>
-            </table>
-        </div>
+        </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // ... (The JavaScript from the previous version remains the same)
+        const welcomePanel = document.getElementById('welcomePanel');
+        const timetablePanel = document.getElementById('timetablePanel');
         const timetableBody = document.getElementById('timetable-body');
         const timetableHead = document.getElementById('timetable-head');
         const currentBatchName = document.getElementById('currentBatchName');
-        const headerButtons = document.getElementById('header-buttons-container');
         const clockDiv = document.getElementById('live-clock');
         const dateDiv = document.getElementById('current-date');
+        const printBtn = document.getElementById('printBtn');
         let currentTimetableData = [];
+        let dailyClassesChart, subjectDistributionChart;
+
+        function initializeCharts() {
+            const dailyCtx = document.getElementById('dailyClassesChart').getContext('2d');
+            dailyClassesChart = new Chart(dailyCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Classes', data: [], backgroundColor: 'rgba(59, 130, 246, 0.7)' }] },
+                options: { responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks: { stepSize: 1 } } } }
+            });
+            const subjectCtx = document.getElementById('subjectDistributionChart').getContext('2d');
+            subjectDistributionChart = new Chart(subjectCtx, {
+                type: 'doughnut',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+                options: { responsive:true, plugins: { legend: { position: 'right' } } }
+            });
+        }
+        initializeCharts();
 
         function updateClockAndHighlights() {
             const now = new Date();
             clockDiv.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             dateDiv.textContent = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            
-            // Re-render to update highlights without a new fetch
             if (currentTimetableData.length > 0) {
                 renderTimetable(currentTimetableData);
             }
         }
-        setInterval(updateClockAndHighlights, 60000); // Update every minute
+        setInterval(updateClockAndHighlights, 60000);
         updateClockAndHighlights();
 
         document.querySelectorAll('.dept-header').forEach(header => {
@@ -303,18 +282,22 @@
                 const batchList = document.getElementById(`dept-${header.dataset.dept}`);
                 header.classList.toggle('active');
                 batchList.classList.toggle('active');
+                header.querySelector('.arrow').innerHTML = batchList.classList.contains('active') ? '&#9652;' : '&#9662;';
             });
         });
 
         document.querySelectorAll('.batch-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
+                welcomePanel.style.display = 'none';
+                timetablePanel.style.display = 'block';
+                printBtn.style.display = 'inline-block';
+
                 document.querySelectorAll('.batch-link').forEach(l => l.classList.remove('selected'));
                 link.classList.add('selected');
 
                 const batchId = link.dataset.batchId;
                 currentBatchName.textContent = `Timetable for ${link.dataset.batchName}`;
-                headerButtons.style.display = 'flex';
 
                 fetch('/get_timetable', {
                     method: 'POST',
@@ -323,18 +306,37 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    currentTimetableData = data; // Store data for live updates
+                    currentTimetableData = data;
                     renderTimetable(data);
+                    updateCharts(data);
                 })
                 .catch(error => console.error('Error fetching timetable:', error));
             });
         });
+        
+        function updateCharts(schedule) {
+            const dailyCount = { 'Monday': 0, 'Tuesday': 0, 'Wednesday': 0, 'Thursday': 0, 'Friday': 0 };
+            const subjectCount = {};
+            schedule.forEach(slot => {
+                if(slot.subject_name !== '---' && !slot.time.toLowerCase().includes('lunch')){
+                    dailyCount[slot.day_of_week] = (dailyCount[slot.day_of_week] || 0) + 1;
+                    subjectCount[slot.subject_name] = (subjectCount[slot.subject_name] || 0) + 1;
+                }
+            });
+            dailyClassesChart.data.labels = Object.keys(dailyCount);
+            dailyClassesChart.data.datasets[0].data = Object.values(dailyCount);
+            dailyClassesChart.update();
+
+            subjectDistributionChart.data.labels = Object.keys(subjectCount);
+            subjectDistributionChart.data.datasets[0].data = Object.values(subjectCount);
+            subjectDistributionChart.data.datasets[0].backgroundColor = Object.keys(subjectCount).map((_, i) => `hsl(${(i * 60) % 360}, 70%, 60%)`);
+            subjectDistributionChart.update();
+        }
 
         function renderTimetable(data) {
             timetableHead.innerHTML = '';
             timetableBody.innerHTML = '';
-
-            if (data.length === 0) {
+            if (!data || data.length === 0) {
                 timetableBody.innerHTML = '<tr><td colspan="6">No timetable data available for this batch.</td></tr>';
                 return;
             }
@@ -345,7 +347,7 @@
             const currentTime = now.getHours() * 60 + now.getMinutes();
 
             let headerHtml = '<tr><th>Time</th>';
-            days.forEach((day, index) => {
+            days.forEach(day => {
                 headerHtml += `<th class="${day === today ? 'today-column' : ''}">${day}</th>`;
             });
             headerHtml += '</tr>';
@@ -384,26 +386,18 @@
 
         function isClassOngoing(timeString, day, today, currentTime) {
             if (day !== today || !timeString || timeString.toLowerCase().includes('lunch')) return false;
-            
             try {
                 const [startTime, endTime] = timeString.split('-').map(t => t.trim());
                 const [startHour, startMinute] = startTime.split(':').map(Number);
                 const [endHour, endMinute] = endTime.split(':').map(Number);
-                
                 const startTotalMinutes = startHour * 60 + startMinute;
                 const endTotalMinutes = endHour * 60 + endMinute;
-
                 return currentTime >= startTotalMinutes && currentTime < endTotalMinutes;
-            } catch (e) {
-                return false; // In case of parsing error
-            }
+            } catch (e) { return false; }
         }
 
-        document.getElementById('printBtn').addEventListener('click', () => window.print());
-
-        timetableBody.innerHTML = '<tr><td colspan="6" style="padding: 2rem;">Please select a department and a batch from the sidebar to begin.</td></tr>';
+        printBtn.addEventListener('click', () => window.print());
     });
     </script>
 </body>
-
 </html>
